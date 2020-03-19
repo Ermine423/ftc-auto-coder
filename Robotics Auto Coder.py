@@ -9,7 +9,15 @@
 #   (IntegratingGyroscope, ModernRoboticsI2cGyro, ModernRoboticsI2cRangeSensor, DistanceSensor, TouchSensor, ColorSensor,
 #     ModernRoboticsOpticalDistanceSensor, BNO055IMU, ModernRoboticsI2cCompassSensor)
 # V.3.1: Solved for errors (program does not crash), added imports for sensors. Changed file naming conventions, and tested within the Android Studio app until working properly.
+# V.4: Now can read hardware files. This will be the base of the test, autonomous, and teleop files.
 import linecache
+import RAC_Identifier
+from RAC_Identifier import read as read
+from RAC_Identifier import motoId as motoId
+from RAC_Identifier import idInit as idInit
+from RAC_Identifier import servoId as servoId
+from RAC_Identifier import crservoId as crservoId
+from RAC_Identifier import sensorId as sensorId
 from time import sleep as sleep
 fStyle = 0
 motoType = 0
@@ -18,10 +26,6 @@ driveNames = [0]
 normNames = [0]
 servoNames = [0]
 sensorNames = [0]
-def read(r, fType):
-    with open(str(r)+str(fType), 'r') as reader:
-        read = reader.read().splitlines()
-    return read
 def write(w, inList, fType):
     with open(str(w)+"."+str(fType), "wt") as writer:
         for rep in inList:
@@ -382,3 +386,14 @@ if fStyle == 0:
         setLine(7, lnSplice7)
         setLine(14, lnSplice14NAMES)
     print(write(fileName, sampList, "java"))
+if fStyle == 1:
+    #TEST FILE
+    idInit("Sharp" + str(tName) + "Hardware")
+    motoAmount = motoId()
+    print(motoAmount)
+    servoAmount = servoId()
+    print(servoAmount)
+    crservoAmount = crservoId()
+    print(crservoAmount)
+    sensorAmount = sensorId()
+    print(sensorAmount)
