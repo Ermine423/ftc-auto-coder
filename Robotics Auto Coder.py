@@ -1,3 +1,14 @@
+import linecache
+from time import sleep as sleep
+fStyle = 0
+motoType = 0
+sampList = [0]
+driveNames = [0]
+normNames = [0]
+servoNames = [0]
+sensorNames = [0]
+sensorAmount = [0]
+tName = input("Enter your team number.")
 #LOG:
 # V.1: Created a hardware creator for either 2 or 4 drive motors, with custom names.
 # V.1.1: Created either two or four other motors on bot. Need to add customizable numbers instead of just 2 or 4.
@@ -10,28 +21,172 @@
 #     ModernRoboticsOpticalDistanceSensor, BNO055IMU, ModernRoboticsI2cCompassSensor)
 # V.3.1: Solved for errors (program does not crash), added imports for sensors. Changed file naming conventions, and tested within the Android Studio app until working properly.
 # V.4: Now can read hardware files. This will be the base of the test, autonomous, and teleop files.
-import linecache
-import RAC_Identifier
-from RAC_Identifier import read as read
-from RAC_Identifier import motoId as motoId
-from RAC_Identifier import idInit as idInit
-from RAC_Identifier import servoId as servoId
-from RAC_Identifier import crservoId as crservoId
-from RAC_Identifier import sensorId as sensorId
-from time import sleep as sleep
-fStyle = 0
-motoType = 0
-sampList = [0]
-driveNames = [0]
-normNames = [0]
-servoNames = [0]
-sensorNames = [0]
+# V.4.1: Condensed the RAC_Identifier and Robotics Auto Coder files. Added identification of motors and servos into lists.
+def read(r, fType):
+    with open(str(r)+"."+str(fType), 'r') as reader:
+        read = reader.read().splitlines()
+    return read
 def write(w, inList, fType):
     with open(str(w)+"."+str(fType), "wt") as writer:
         for rep in inList:
             writer.write(str(rep) + "\n")
             
     return "Written to " + str(w)+"."+str(fType) + "."
+test_list = [""]
+def idInit(fileId):
+    global test_list
+    test_list = read(str(fileId), "java")
+def replacer2(subs1, subs2):
+    global test_list
+    kill = [i for i in test_list if subs1 in i]
+    i = 0
+    while i <= len(kill)-1:
+        kill[i] = kill[i].replace(subs1, "")
+        kill[i] = kill[i].replace(subs2, "")
+        i += 1
+    i = 0
+    return kill
+def replacer3(subs1, subs2, varSub, t1, t2):
+    global test_list
+    kill = [i for i in test_list if subs1 in i]
+    i = 0
+    while i <= len(kill)-1:
+        kill[i] = kill[i].replace(subs1, "")
+        kill[i] = kill[i].replace(subs2, "")
+        if kill[i] == str(globals()[varSub + str(i+1)] + str(t1)):
+            kill[i] = str(t1)
+        elif kill[i] == str(globals()[varSub + str(i+1)] + str(t2)):
+            kill[i] = str(t2)
+        i += 1
+    i = 0
+    return kill
+def NSreplacer3(subs1, subs2, varSub):
+    global test_list
+    kill = [i for i in test_list if subs1 in i]
+    i = 0
+    while i <= len(kill)-1:
+        kill[i] = kill[i].replace(subs1, "")
+        kill[i] = kill[i].replace(subs2, "")
+        kill[i] = kill[i].replace(str(globals()[varSub + str(i+1)]), "")
+        i += 1
+    i = 0
+    return kill
+def Vreplacer2(subs1, subs2, l):
+    global test_list
+    kill = [i for i in l if subs1 in i]
+    i = 0
+    while i <= len(kill)-1:
+        kill[i] = kill[i].replace(subs1, "")
+        kill[i] = kill[i].replace(subs2, "")
+        i += 1
+    i = 0
+    return kill
+def assign(varName, source):
+    i = 1
+    while i <= len(source):
+        globals()[varName + str(i)] = source[i-1]
+        print(varName + str(i) + " = " + str(globals()[varName + str(i)]))
+        i += 1
+    return i
+#WHAT ACTUALLY IS RUNNING
+def motorId():
+    motorAmount = assign("motorName", replacer2("public DcMotor ", " = null;"))
+    assign("motorDirect", replacer3(".setDirection(DcMotor.Direction.", ");", "motorName", "FORWARD", "REVERSE"))
+    assign("motorEncode", replacer3(".setMode(DcMotor.RunMode.", ");", "motorName", "RUN_USING_ENCODER", "RUN_WITHOUT_ENCODER"))
+    motorAmount -= 1
+    return motorAmount
+def servoId():
+    servoAmount = assign("servoName", replacer2("public Servo ", " = null;"))
+    assign("servoPos", NSreplacer3(".setPosition(", ");", "servoName"))
+    servoAmount -= 1
+    return servoAmount
+def crservoId():
+    crservoAmount = assign("crservoName", replacer2("public CRServo ", " = null;"))
+    assign("crservoDirect", replacer3(".setDirection(CRServo.Direction.", ");", "crservoName", "FORWARD", "REVERSE"))
+    crservoAmount -= 1
+    return crservoAmount
+def intgyroId():
+    intgyroAmount = assign("intgyroName", replacer2(" public IntegratingGyroscope ", " = null;"))
+    intgyroAmount -= 1
+    return intgyroAmount
+def mrgyroId():
+    mrgyroAmount = assign("mrgyroName", replacer2(" public ModernRoboticsI2cGyro ", " = null;"))
+    mrgyroAmount -= 1
+    return mrgyroAmount
+def mrrangeId():
+    mrrangeAmount = assign("mrrangeName", replacer2(" public ModernRoboticsI2cRangeSensor ", " = null;"))
+    mrrangeAmount -= 1
+    return mrrangeAmount
+def distId():
+    distAmount = assign("distName", replacer2(" public DistanceSensor ", " = null;"))
+    distAmount -= 1
+    return distAmount
+def touchId():
+    touchAmount = assign("touchName", replacer2(" public TouchSensor ", " = null;"))
+    touchAmount -= 1
+    return touchAmount
+def colorId():
+    colorAmount = assign("colorName", replacer2(" public ColorSensor ", " = null;"))
+    colorAmount -= 1
+    return colorAmount
+def odsId():
+    odsAmount = assign("odsName", replacer2(" public OpticalDistanceSensor ", " = null;"))
+    odsAmount -= 1
+    return odsAmount
+def imuId():
+    imuAmount = assign("imuName", replacer2(" public BNO055IMU ", " = null;"))
+    imuAmount -= 1
+    return imuAmount
+def compassId():
+    compassAmount = assign("compassName", replacer2(" public ModernRoboticsI2cCompassSensor ", " = null;"))
+    compassAmount -= 1
+    return compassAmount
+def sensorId():
+    sensorAmount = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    i = 0
+    sensorAmount[i] = intgyroId()
+    i += 1
+    sensorAmount[i] = mrgyroId()
+    i += 1
+    sensorAmount[i] = mrrangeId()
+    i += 1
+    sensorAmount[i] = distId()
+    i += 1
+    sensorAmount[i] = touchId()
+    i += 1
+    sensorAmount[i] = colorId()
+    i += 1
+    sensorAmount[i] = odsId()
+    i += 1
+    sensorAmount[i] = imuId()
+    i += 1
+    sensorAmount[i] = compassId()
+    return sensorAmount
+def sensorIterate(sensIndex):
+    global sensorAmount
+    i = 1
+    if sensIndex == 0:
+        sensType = "intgyro"
+    elif sensIndex == 1:
+        sensType = "mrgyro"
+    elif sensIndex == 2:
+        sensType = "mrrange"
+    elif sensIndex == 3:
+        sensType = "dist"
+    elif sensIndex == 4:
+        sensType = "touch"
+    elif sensIndex == 5:
+        sensType = "color"
+    elif sensIndex == 6:
+        sensType = "ods"
+    elif sensIndex == 7:
+        sensType = "imu"
+    elif sensIndex == 8:
+        sensType = "compass"
+    while i <= globals()["sensorAmount"][sensIndex]:
+        globals()[sensType + str(i)] = [globals()[sensType + "Name" + str(i)]]
+        print(globals()[sensType + str(i)])
+        i += 1
 def listSetup(lines):
     global sampList
     sampList = [""]
@@ -46,7 +201,41 @@ def setLine(num, txt):
 def appendLine(num, txt):
     global sampList
     sampList[num - 1] += str(txt)
-tName = input("Enter your team number.")
+def identification():
+    global tName
+    global sensorAmount
+    global motorAmount
+    global servoAmount
+    global crservoAmount
+    global sensorAmount
+    idInit("Sharp" + str(tName) + "Hardware")
+    motorAmount = motorId()
+    print(motorAmount)
+    servoAmount = servoId()
+    print(servoAmount)
+    crservoAmount = crservoId()
+    print(crservoAmount)
+    sensorAmount = sensorId()
+    print(sensorAmount)
+    i = 1
+    while i <= motorAmount:
+        globals()["motor" + str(i)] = [globals()["motorName" + str(i)], globals()["motorDirect" + str(i)], globals()["motorEncode" + str(i)]]
+        print(globals()["motor" + str(i)])
+        i += 1
+    i = 1
+    while i <= servoAmount:
+        globals()["servo" + str(i)] = [globals()["servoName" + str(i)], globals()["servoPos" + str(i)]]
+        print(globals()["servo" + str(i)])
+        i += 1
+    i = 1
+    while i <= crservoAmount:
+        globals()["crservo" + str(i)] = [globals()["crservoName" + str(i)], globals()["crservoDirect" + str(i)], 0]
+        print(globals()["crservo" + str(i)])
+        i += 1
+    i = 0
+    while i < 9:
+        sensorIterate(i)
+        i += 1
 #Ask if a hardware file, a test file, or an autonomous file.
 listSetup(15)
 #15 Sections of code.
@@ -387,13 +576,181 @@ if fStyle == 0:
         setLine(14, lnSplice14NAMES)
     print(write(fileName, sampList, "java"))
 if fStyle == 1:
+    global motorAmount
     #TEST FILE
-    idInit("Sharp" + str(tName) + "Hardware")
-    motoAmount = motoId()
-    print(motoAmount)
-    servoAmount = servoId()
-    print(servoAmount)
-    crservoAmount = crservoId()
-    print(crservoAmount)
-    sensorAmount = sensorId()
-    print(sensorAmount)
+    identification()
+    testOptions = ["TIME"]
+    i = 1
+    while i <= motorAmount:
+        print(str(i) + ". " + globals()["motor" + str(i)][0])
+        i += 1
+    dM = 0
+    while True:
+        try:
+            dM = int(input("How many of these are drive motors?"))
+            if dM <= motorAmount and dM != 0:
+                testOptions = ["TIME"]
+                break
+            elif dM == 0:
+                    if int(input("Do you use Continuous Rotation Servos to drive? \nEnter 0 for \"no\", or 1 for \"yes\".")) == 1:
+                        testOptions = ["CRSERVO"]
+                        break
+                    else:
+                        print("Driving is essential to this competition. \nHow do you get around on the field? \nThis program won't work for your bot.")
+            else:
+                print("Invalid answer. Try again.")
+        except ValueError:
+            print("Invalid answer. Try again.")
+    i = 1
+    driveNums = [0]
+    while i <= dM:
+        j = 1
+        while j <= motorAmount:
+            if j not in driveNums:
+                print(str(j) + ". " + globals()["motor" + str(j)][0])
+            j += 1
+        j = 1
+        if i == 1:
+            while True:
+                try:
+                    driveNums = [int(input("Enter the first drive motor."))]
+                    break
+                except ValueError:
+                    print("Invalid input. Try again.")
+        else:
+            while True:
+                try:
+                    driveNums.append(int(input("Enter the next drive motor.")))
+                    break
+                except ValueError:
+                    print("Invalid input. Try again.")
+        i += 1
+    i = 1
+    while i < dM:
+        if globals()["motor" + str(driveNums[i - 1])][2] == "RUN_USING_ENCODER":
+            i += 1
+        else:
+            break
+    if i == dM:
+        #Enable encoder testing
+        testOptions.append("ENCODER")
+    if sensorAmount[0] > 0:
+        while True:
+            try:
+                drIntG = int(input("Do you use an integrating gyro when driving? \nEnter 1 for yes, or 0 for no."))
+                if drIntG == 1:
+                    testOptions.append("INTGYRO")
+                    break
+                elif drIntG == 0:
+                    break
+            except ValueError:
+                print("Invalid answer. Try again.")
+        i = 1
+        while i <= drIntG:
+            j = 1
+            while j <= sensorAmount[0]:
+                if sensorAmount[0] > 1:
+                    print(str(i) + ". " + str(globals()["intgyroName" + str(i)]))
+                while True:
+                    try:
+                        if j == 1 and sensorAmount[0] > 1:
+                            driveIntGNums = [int(input("Enter the gyro you use for driving."))]
+                        elif j == 1 and sensorAmount[0] == 1:
+                            driveIntGNums = [1]
+                        break
+                    except ValueError:
+                        print("Invalid input. Try again.")
+                j += 1
+            i += 1
+    if sensorAmount[1] > 0:
+        while True:
+            try:
+                drMrG = int(input("Do you use a Modern Robotics gyro when driving? \nEnter 1 for yes, or 0 for no."))
+                if drMrG == 1:
+                    testOptions.append("MRGYRO")
+                    break
+                elif drMrG == 0:
+                    break
+            except ValueError:
+                print("Invalid answer. Try again.")
+        i = 1
+        while i <= drMrG:
+            j = 1
+            while j <= sensorAmount[1]:
+                if sensorAmount[1] > 1:
+                    print(str(i) + ". " + str(globals()["mrgyroName" + str(i)]))
+                while True:
+                    try:
+                        if j == 1 and sensorAmount[1] > 1:
+                            driveMrGNums = [int(input("Enter the gyro you use for driving."))]
+                        elif j == 1 and sensorAmount[1] == 1:
+                            driveMrGNums = [1]
+                        break
+                    except ValueError:
+                        print("Invalid input. Try again.")
+                j += 1
+            i += 1
+    if sensorAmount[7] > 0:
+        while True:
+            try:
+                drImu = int(input("Do you use a REV IMU when driving? \nEnter 1 for yes, or 0 for no."))
+                if drImu == 1:
+                    testOptions.append("IMU")
+                    break
+                elif drImu == 0:
+                    break
+            except ValueError:
+                print("Invalid answer. Try again.")
+        i = 1
+        while i <= drImu:
+            j = 1
+            while j <= sensorAmount[7]:
+                if sensorAmount[7] > 1:
+                    print(str(i) + ". " + str(globals()["imuName" + str(i)]))
+                while True:
+                    try:
+                        if j == 1 and sensorAmount[7] > 1:
+                            driveImuNums = [int(input("Enter the imu you use for driving."))]
+                        elif j == 1 and sensorAmount[7] == 1:
+                            driveImuNums = [1]
+                        break
+                    except ValueError:
+                        print("Invalid input. Try again.")
+                j += 1
+            i += 1
+    if sensorAmount[8] > 0:
+        while True:
+            try:
+                drCompass = int(input("Do you use a Compass Sensor when driving? \nEnter 1 for yes, or 0 for no."))
+                if drCompass == 1:
+                    testOptions.append("COMPASS")
+                    break
+                elif drCompass == 0:
+                    break
+            except ValueError:
+                print("Invalid answer. Try again.")
+        i = 1
+        while i <= drCompass:
+            j = 1
+            while j <= sensorAmount[8]:
+                if sensorAmount[8] > 1:
+                    print(str(i) + ". " + str(globals()["compassName" + str(i)]))
+                while True:
+                    try:
+                        if j == 1 and sensorAmount[8] > 1:
+                            driveCompassNums = [int(input("Enter the compass sensor you use for driving."))]
+                        elif j == 1 and sensorAmount[8] == 1:
+                            driveCompassNums = [1]
+                        break
+                    except ValueError:
+                        print("Invalid input. Try again.")
+                j += 1
+            i += 1
+                
+    
+if fStyle == 2:
+    #AUTONOMOUS FILE
+    identification()
+if fStyle == 3:
+    #TELEOP FILE
+    identification()
